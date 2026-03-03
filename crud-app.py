@@ -15,6 +15,19 @@ def init_connection():
 
 gc = init_connection()
 
+
+def get_service_account_email(client):
+    auth = getattr(client, "auth", None)
+    if auth is not None:
+        signer_email = getattr(auth, "signer_email", None)
+        if signer_email:
+            return signer_email
+
+    try:
+        return dict(st.secrets["gcp_service_account"]).get("client_email", "未知")
+    except Exception:
+        return "未知"
+
 # ==========================================
 # 2. 開啟指定的試算表與工作表
 # ==========================================
@@ -28,8 +41,9 @@ try:
         sh = gc.open(SHEET_INPUT)
     worksheet = sh.worksheet(WORKSHEET_NAME)
 except Exception as e:
+    service_account_email = get_service_account_email(gc)
     st.error(
-        f"無法開啟試算表，請確認名稱/網址是否正確，且服務帳號 ({gc.auth.signer_email}) 已被加入共用編輯者！\n錯誤訊息：{e}")
+        f"無法開啟試算表，請確認名稱/網址是否正確，且服務帳號 ({service_account_email}) 已被加入共用編輯者！\n錯誤訊息：{e}")
     st.stop()
 
 st.title("📊 Google Sheets 讀寫測試儀表板")
